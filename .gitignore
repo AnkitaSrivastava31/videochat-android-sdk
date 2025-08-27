@@ -1,0 +1,22 @@
+# Android / Gradle
+.gradle/
+build/
+*/build/
+local.properties
+.idea/
+*.iml
+
+# Keystores (if any)
+*.jks
+*.keystore
+
+# Logs
+*.log
+
+# Node (signaling-server)
+signaling-server/node_modules/
+signaling-server/.env
+npm-debug.log*
+
+# Misc
+.captures/
