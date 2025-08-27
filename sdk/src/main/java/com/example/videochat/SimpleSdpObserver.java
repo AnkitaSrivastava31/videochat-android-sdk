@@ -1,10 +1,12 @@
 package com.example.videochat;
 
-import org.webrtc.SdpObserver;
-import org.webrtc.SessionDescription;
 import android.util.Log;
 
+import org.webrtc.SdpObserver;
+import org.webrtc.SessionDescription;
+
 public class SimpleSdpObserver implements SdpObserver {
+
     private static final String TAG = "SimpleSdpObserver";
 
     @Override
@@ -18,12 +20,12 @@ public class SimpleSdpObserver implements SdpObserver {
     }
 
     @Override
-    public void onCreateFailure(String s) {
-        Log.e(TAG, "onCreateFailure: " + s);
+    public void onCreateFailure(String error) {
+        Log.e(TAG, "onCreateFailure: " + error);
     }
 
     @Override
-    public void onSetFailure(String s) {
-        Log.e(TAG, "onSetFailure: " + s);
+    public void onSetFailure(String error) {
+        Log.e(TAG, "onSetFailure: " + error);
     }
 }

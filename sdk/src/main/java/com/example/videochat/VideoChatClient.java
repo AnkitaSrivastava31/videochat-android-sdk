@@ -3,6 +3,8 @@ package com.example.videochat;
 import android.content.Context;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.Camera2Enumerator;
@@ -210,8 +212,39 @@ public class VideoChatClient {
             @Override
             public void onMessage(WebSocket webSocket, String text) {
                 Log.d(TAG, "Received message: " + text);
-                // TODO: parse "answer" or "candidate" and apply to PeerConnection
+                try {
+                    JSONObject json = new JSONObject(text);
+                    String type = json.getString("type");
+
+                    switch (type) {
+                        case "answer":
+                            // Remote SDP Answer
+                            String sdp = json.getString("sdp");
+                            SessionDescription answer = new SessionDescription(
+                                    SessionDescription.Type.ANSWER,
+                                    sdp
+                            );
+                            peerConnection.setRemoteDescription(new SimpleSdpObserver(), answer);
+                            break;
+
+                        case "candidate":
+                            // ICE Candidate from remote
+                            IceCandidate candidate = new IceCandidate(
+                                    json.getString("sdpMid"),
+                                    json.getInt("sdpMLineIndex"),
+                                    json.getString("candidate")
+                            );
+                            peerConnection.addIceCandidate(candidate);
+                            break;
+
+                        default:
+                            Log.w(TAG, "Unknown message type: " + type);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
+
         });
     }
 
