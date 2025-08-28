@@ -1,6 +1,8 @@
 package com.example.videochat;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -212,38 +214,35 @@ public class VideoChatClient {
             @Override
             public void onMessage(WebSocket webSocket, String text) {
                 Log.d(TAG, "Received message: " + text);
+
                 try {
                     JSONObject json = new JSONObject(text);
                     String type = json.getString("type");
 
-                    switch (type) {
-                        case "answer":
-                            // Remote SDP Answer
-                            String sdp = json.getString("sdp");
-                            SessionDescription answer = new SessionDescription(
-                                    SessionDescription.Type.ANSWER,
-                                    sdp
-                            );
-                            peerConnection.setRemoteDescription(new SimpleSdpObserver(), answer);
-                            break;
-
-                        case "candidate":
-                            // ICE Candidate from remote
-                            IceCandidate candidate = new IceCandidate(
-                                    json.getString("sdpMid"),
-                                    json.getInt("sdpMLineIndex"),
-                                    json.getString("candidate")
-                            );
-                            peerConnection.addIceCandidate(candidate);
-                            break;
-
-                        default:
-                            Log.w(TAG, "Unknown message type: " + type);
+                    if ("answer".equals(type)) {
+                        SessionDescription sdp = new SessionDescription(
+                                SessionDescription.Type.ANSWER,
+                                json.getString("sdp")
+                        );
+                        peerConnection.setRemoteDescription(new SimpleSdpObserver(), sdp);
+                    } else if ("candidate".equals(type)) {
+                        IceCandidate candidate = new IceCandidate(
+                                json.getString("sdpMid"),
+                                json.getInt("sdpMLineIndex"),
+                                json.getString("candidate")
+                        );
+                        peerConnection.addIceCandidate(candidate);
+                    } else if ("doc".equals(type)) {
+                        String url = json.getString("url");
+                        // Open document in browser or custom viewer
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        context.startActivity(intent);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
+
 
         });
     }
@@ -279,6 +278,14 @@ public class VideoChatClient {
     public void switchCamera() {
         if (cameraVideoCapturer != null) {
             cameraVideoCapturer.switchCamera(null);
+        }
+    }
+
+    public void sendMessage(String message) {
+        if (webSocket != null) {
+            webSocket.send(message);
+        } else {
+            Log.e(TAG, "WebSocket is not connected. Cannot send message.");
         }
     }
 }

@@ -1,18 +1,24 @@
 package com.example.sampleapp;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.videochat.VideoChatClient;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import org.webrtc.SurfaceViewRenderer;
 
 public class MainActivity extends AppCompatActivity {
 
     private VideoChatClient videoChatClient;
+    private static final int PICK_FILE_REQUEST = 101;
     private SurfaceViewRenderer localView, remoteView;
     private Button btnMute, btnCamera, btnSwitchCamera, btnShareDoc, btnEndCall;
 
@@ -52,13 +58,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Switch Camera
-        btnSwitchCamera.setOnClickListener(v -> {
-            videoChatClient.switchCamera();
-        });
+        btnSwitchCamera.setOnClickListener(v -> videoChatClient.switchCamera());
 
-        // Share Document (Placeholder)
+        // Share Document
         btnShareDoc.setOnClickListener(v -> {
-            Toast.makeText(this, "Document Sharing feature coming soon!", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType("*/*"); // or "application/pdf" for PDFs only
+            startActivityForResult(Intent.createChooser(intent, "Select Document"), PICK_FILE_REQUEST);
         });
 
         // End Call
@@ -69,5 +75,39 @@ public class MainActivity extends AppCompatActivity {
 
         // Start Call Automatically
         videoChatClient.connect();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_FILE_REQUEST && resultCode == RESULT_OK && data != null) {
+            Uri fileUri = data.getData();
+            if (fileUri != null) {
+                uploadDocument(fileUri);
+            }
+        }
+    }
+
+    // 🔼 Upload document to Firebase Storage
+    private void uploadDocument(Uri fileUri) {
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference storageRef = storage.getReference()
+                .child("shared_docs/" + System.currentTimeMillis());
+
+        storageRef.putFile(fileUri)
+                .addOnSuccessListener(taskSnapshot ->
+                        storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                            Toast.makeText(this, "Document Shared!", Toast.LENGTH_SHORT).show();
+
+                            // ✅ Send download URL to peer via your signaling (WebSocket)
+                            videoChatClient.sendMessage(
+                                    "{\"type\":\"doc\",\"url\":\"" + uri.toString() + "\"}"
+                            );
+                        })
+                )
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                );
     }
 }

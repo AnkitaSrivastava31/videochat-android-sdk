@@ -9,8 +9,12 @@ activity = "1.10.1"
 constraintlayout = "2.2.1"
 googleWebrtc = "1.0.39079"
 firebaseDatabase = "22.0.0"
+googleGmsGoogleServices = "4.4.3"
 
 [libraries]
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-storage = { module = "com.google.firebase:firebase-storage" }
+google-firebase-database = { module = "com.google.firebase:firebase-database" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -24,4 +28,5 @@ firebase-database = { group = "com.google.firebase", name = "firebase-database",
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 

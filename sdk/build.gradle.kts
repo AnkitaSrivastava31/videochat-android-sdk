@@ -48,7 +48,10 @@ dependencies {
     // ✅ Animations (optional but useful for UI)
     implementation("com.airbnb.android:lottie:6.0.0")
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.22")
-
+    implementation (platform("com.google.firebase:firebase-bom:33.3.0")) // use latest BoM
+    implementation (libs.firebase.storage)
+    implementation (libs.firebase.auth)
+    implementation (libs.google.firebase.database)
     implementation(libs.firebase.database)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

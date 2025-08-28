@@ -1,5 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.google.gms.google.services)
+//    id ("com.google.gms.google-services")
 }
 
 android {
@@ -57,8 +59,12 @@ dependencies {
     // ✅ Animations (optional but useful for UI)
     implementation("com.airbnb.android:lottie:6.0.0")
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.22")
-    implementation(libs.google.webrtc)
 
+    implementation (platform("com.google.firebase:firebase-bom:33.3.0")) // use latest BoM
+    implementation (libs.firebase.storage)
+    implementation (libs.firebase.auth)
+    implementation (libs.google.firebase.database)
+    implementation(libs.google.webrtc)
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
