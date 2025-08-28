@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // 🔼 Upload document to Firebase Storage
+    //Upload document to Firebase Storage
     private void uploadDocument(Uri fileUri) {
         FirebaseStorage storage = FirebaseStorage.getInstance();
         StorageReference storageRef = storage.getReference()
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                         storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                             Toast.makeText(this, "Document Shared!", Toast.LENGTH_SHORT).show();
 
-                            // ✅ Send download URL to peer via your signaling (WebSocket)
+                            // Send download URL to peer via your signaling (WebSocket)
                             videoChatClient.sendMessage(
                                     "{\"type\":\"doc\",\"url\":\"" + uri.toString() + "\"}"
                             );
