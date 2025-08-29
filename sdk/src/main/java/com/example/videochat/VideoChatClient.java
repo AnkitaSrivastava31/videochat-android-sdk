@@ -88,6 +88,11 @@ public class VideoChatClient {
 
     private void startLocalMedia() {
         cameraVideoCapturer = createCameraCapturer(new Camera2Enumerator(context));
+        if (cameraVideoCapturer == null) {
+            Log.e(TAG, "Failed to open camera capturer");
+            return; // Exit early, otherwise crash
+        }
+
         VideoSource videoSource = peerConnectionFactory.createVideoSource(cameraVideoCapturer.isScreencast());
 
         SurfaceTextureHelper surfaceTextureHelper =
@@ -98,7 +103,11 @@ public class VideoChatClient {
                 context,
                 videoSource.getCapturerObserver()
         );
-        cameraVideoCapturer.startCapture(640, 480, 30);
+        try {
+            cameraVideoCapturer.startCapture(640, 480, 30);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start capture: ", e);
+        }
 
         localVideoTrack = peerConnectionFactory.createVideoTrack("LOCAL_VIDEO", videoSource);
         localVideoTrack.addSink(localView);
@@ -106,6 +115,7 @@ public class VideoChatClient {
         AudioSource audioSource = peerConnectionFactory.createAudioSource(new MediaConstraints());
         localAudioTrack = peerConnectionFactory.createAudioTrack("LOCAL_AUDIO", audioSource);
     }
+
 
     private CameraVideoCapturer createCameraCapturer(Camera2Enumerator enumerator) {
         final String[] deviceNames = enumerator.getDeviceNames();
@@ -158,7 +168,7 @@ public class VideoChatClient {
 
             @Override
             public void onAddStream(MediaStream mediaStream) {
-                if (mediaStream.videoTracks.size() > 0) {
+                if (!mediaStream.videoTracks.isEmpty()) {
                     mediaStream.videoTracks.get(0).addSink(remoteView);
                 }
             }
@@ -181,8 +191,6 @@ public class VideoChatClient {
         mediaStream.addTrack(localVideoTrack);
         peerConnection.addStream(mediaStream);
     }
-
-    // ------------------- NEW CONNECT METHOD -------------------
     public void connect() {
         Log.d(TAG, "Connecting to signaling server: " + signalingServerUrl);
 
@@ -219,29 +227,59 @@ public class VideoChatClient {
                     JSONObject json = new JSONObject(text);
                     String type = json.getString("type");
 
-                    if ("answer".equals(type)) {
-                        SessionDescription sdp = new SessionDescription(
-                                SessionDescription.Type.ANSWER,
-                                json.getString("sdp")
-                        );
-                        peerConnection.setRemoteDescription(new SimpleSdpObserver(), sdp);
-                    } else if ("candidate".equals(type)) {
-                        IceCandidate candidate = new IceCandidate(
-                                json.getString("sdpMid"),
-                                json.getInt("sdpMLineIndex"),
-                                json.getString("candidate")
-                        );
-                        peerConnection.addIceCandidate(candidate);
-                    } else if ("doc".equals(type)) {
-                        String url = json.getString("url");
-                        // Open document in browser or custom viewer
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                        context.startActivity(intent);
+                    switch (type) {
+                        case "offer":
+                            SessionDescription offer = new SessionDescription(
+                                    SessionDescription.Type.OFFER,
+                                    json.getString("sdp")
+                            );
+                            peerConnection.setRemoteDescription(new SimpleSdpObserver(), offer);
+
+                            // Create Answer
+                            MediaConstraints constraints = new MediaConstraints();
+                            constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
+                            constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
+
+                            peerConnection.createAnswer(new SimpleSdpObserver() {
+                                @Override
+                                public void onCreateSuccess(SessionDescription sessionDescription) {
+                                    peerConnection.setLocalDescription(new SimpleSdpObserver(), sessionDescription);
+
+                                    // Send Answer back
+                                    webSocket.send("{\"type\":\"answer\",\"sdp\":\"" +
+                                            sessionDescription.description.replace("\n", "\\n") + "\"}");
+                                }
+                            }, constraints);
+                            break;
+
+                        case "answer":
+                            SessionDescription sdp = new SessionDescription(
+                                    SessionDescription.Type.ANSWER,
+                                    json.getString("sdp")
+                            );
+                            peerConnection.setRemoteDescription(new SimpleSdpObserver(), sdp);
+                            break;
+
+                        case "candidate":
+                            IceCandidate candidate = new IceCandidate(
+                                    json.getString("sdpMid"),
+                                    json.getInt("sdpMLineIndex"),
+                                    json.getString("candidate")
+                            );
+                            peerConnection.addIceCandidate(candidate);
+                            break;
+
+                        case "doc":
+                            String url = json.getString("url");
+                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                            context.startActivity(intent);
+                            break;
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
+
 
 
         });
