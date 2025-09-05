@@ -19,6 +19,7 @@ dependencyResolutionManagement {
     }
 }
 
+
 rootProject.name = "sampleapp"
 include(":app")
 include(":sdk")

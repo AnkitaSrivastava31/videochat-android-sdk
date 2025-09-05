@@ -32,7 +32,7 @@ dependencies {
 
     implementation(libs.appcompat)
     implementation(libs.material)
-    implementation(libs.google.webrtc)
+    implementation(libs.webrtc)
     // ✅ WebRTC (latest community maintained build)
     implementation("io.github.webrtc-sdk:android:125.6422.08")
 
@@ -51,7 +51,6 @@ dependencies {
     implementation (platform("com.google.firebase:firebase-bom:33.3.0")) // use latest BoM
     implementation (libs.firebase.storage)
     implementation (libs.firebase.auth)
-    implementation (libs.google.firebase.database)
     implementation(libs.firebase.database)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
